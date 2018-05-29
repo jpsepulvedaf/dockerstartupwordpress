@@ -1,0 +1,13 @@
+version: "2"
+options:
+  verbose: true
+syncs:
+  ${DOCKER_WORDPRESS_CONTAINER_NAME}-mariadb-rsync-sync:
+    src: './mysql_data/'
+    sync_host_port: 10871
+    sync_userid: '999' # Id del usuario "mysql"
+
+  ${DOCKER_WORDPRESS_CONTAINER_NAME}-wordpress-rsync-sync:
+    src: './html/'
+    sync_host_port: 10872
+    sync_userid: '1000' # Id del usuario ${LINUX_USR}

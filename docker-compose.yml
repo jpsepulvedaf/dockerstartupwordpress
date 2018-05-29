@@ -1,0 +1,66 @@
+version: '3'
+
+services:
+   site_mariadb:
+     container_name: ${DOCKER_MARIADB_CONTAINER_NAME}
+     image: mariadb:10.0.29
+     volumes:
+       - ${DOCKER_WORDPRESS_CONTAINER_NAME}-mariadb-rsync-sync:/var/lib/mysql:nocopy
+
+     restart: always
+     environment:
+       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+       - MYSQL_DATABASE=${MYSQL_DATABASE}
+       - MYSQL_USER=${MYSQL_USER}
+       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+     networks:
+       - BackEnd
+     ports:
+       - "3306:3306"
+
+   site_wordpress:
+     container_name: ${DOCKER_WORDPRESS_CONTAINER_NAME}
+     env_file: .env
+     build:
+        context: .
+        args:
+            LINUX_USR: ${LINUX_USR}
+            LINUX_USR_PWD: ${LINUX_USR_PWD}
+
+     depends_on:
+       - site_mariadb
+     image: wordpress:4.7.2-apache
+     ports:
+       - "80:80"
+       - "22:22"
+     restart: always
+     volumes:
+           - ${DOCKER_WORDPRESS_CONTAINER_NAME}-wordpress-rsync-sync:/var/www/html:nocopy
+           - ./apache_logs:/etc/apache2/apache_log
+           - ./uploads.ini:/usr/local/etc/php/conf.d/uploads.ini
+
+     environment:
+       - WORDPRESS_DB_HOST=${DOCKER_MARIADB_CONTAINER_NAME}
+       - WORDPRESS_DB_NAME=${MYSQL_DATABASE}
+       - WORDPRESS_DB_USER=${MYSQL_USER}
+       - WORDPRESS_DB_PASSWORD=${MYSQL_PASSWORD}
+
+     networks:
+       - FrontEnd
+       - BackEnd
+
+     entrypoint: ["/start.sh"]
+
+
+
+networks:
+    FrontEnd:
+      driver: bridge
+    BackEnd:
+      driver: bridge
+
+volumes:
+  ${DOCKER_WORDPRESS_CONTAINER_NAME}-mariadb-rsync-sync:
+    external: true
+  ${DOCKER_WORDPRESS_CONTAINER_NAME}-wordpress-rsync-sync:
+      external: true
